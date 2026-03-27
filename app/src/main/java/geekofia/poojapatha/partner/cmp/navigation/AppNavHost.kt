@@ -2,21 +2,52 @@ package geekofia.poojapatha.partner.cmp.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import geekofia.poojapatha.partner.cmp.feature.auth.ui.identifier.IdentifierScreen
+import geekofia.poojapatha.partner.cmp.feature.auth.ui.verifyotp.VerifyOtpScreen
 
 @Composable
 fun AppNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: Any = IdentifierRoute,
 ) {
+    val rootViewModel: RootViewModel = hiltViewModel()
+    val authState by rootViewModel.authState.collectAsStateWithLifecycle()
+
+    // ── Loading splash — wait for DataStore to emit the initial token state ──
+    if (authState is RootViewModel.AuthState.Loading) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    val startDestination: Any = when (authState) {
+        is RootViewModel.AuthState.Authenticated -> MainRoute
+        else -> IdentifierRoute
+    }
+
+    // ── Handle 401 forced-logout from anywhere in the app ────────────────────
+    LaunchedEffect(Unit) {
+        rootViewModel.tokenExpiredEvents.collect {
+            navController.navigate(IdentifierRoute) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -24,13 +55,24 @@ fun AppNavHost(
     ) {
         // ── Auth ──────────────────────────────────────────────────────────────
         composable<IdentifierRoute> {
-            PlaceholderScreen("Identifier")
+            IdentifierScreen(
+                onNavigateToVerifyOtp = { identifier ->
+                    navController.navigate(VerifyOtpRoute(identifier))
+                },
+            )
         }
         composable<VerifyOtpRoute> {
-            PlaceholderScreen("Verify OTP")
+            VerifyOtpScreen(
+                onNavigateToMain = {
+                    navController.navigate(MainRoute) {
+                        popUpTo(IdentifierRoute) { inclusive = true }
+                    }
+                },
+                onNavigateBack = { navController.popBackStack() },
+            )
         }
 
-        // ── Onboarding ────────────────────────────────────────────────────────
+        // ── Onboarding (Phase 4) ──────────────────────────────────────────────
         composable<OnboardingRoleSelectionRoute> {
             PlaceholderScreen("Onboarding: Role Selection")
         }
@@ -53,7 +95,7 @@ fun AppNavHost(
             PlaceholderScreen("Onboarding: Status")
         }
 
-        // ── Location Setup ────────────────────────────────────────────────────
+        // ── Location Setup (Phase 4) ──────────────────────────────────────────
         composable<LocationSetupRoute> {
             PlaceholderScreen("Location Setup")
         }
@@ -64,12 +106,12 @@ fun AppNavHost(
             PlaceholderScreen("Existing Location")
         }
 
-        // ── Main App ──────────────────────────────────────────────────────────
+        // ── Main App (Phase 5+) ───────────────────────────────────────────────
         composable<MainRoute> {
-            PlaceholderScreen("Main (Bottom Nav)")
+            PlaceholderScreen("Main App")
         }
 
-        // ── Booking Detail ────────────────────────────────────────────────────
+        // ── Booking Detail (Phase 6) ──────────────────────────────────────────
         composable<BookingDetailRoute> {
             PlaceholderScreen("Booking Detail")
         }
@@ -77,12 +119,12 @@ fun AppNavHost(
             PlaceholderScreen("Booking Action OTP")
         }
 
-        // ── Payout Detail ─────────────────────────────────────────────────────
+        // ── Payout Detail (Phase 7) ───────────────────────────────────────────
         composable<PayoutDetailRoute> {
             PlaceholderScreen("Payout Detail")
         }
 
-        // ── Account Sub-screens ───────────────────────────────────────────────
+        // ── Account Sub-screens (Phase 9) ─────────────────────────────────────
         composable<EditProfileRoute> {
             PlaceholderScreen("Edit Profile")
         }
@@ -102,7 +144,7 @@ fun AppNavHost(
             PlaceholderScreen("About")
         }
 
-        // ── Incoming Offer ────────────────────────────────────────────────────
+        // ── Incoming Offer (Phase 12) ─────────────────────────────────────────
         composable<IncomingOfferRoute> {
             PlaceholderScreen("Incoming Offer")
         }

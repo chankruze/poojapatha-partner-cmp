@@ -27,7 +27,7 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/api/v1\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.3:3000/api/v1\"")
             buildConfigField("String", "API_KEY", "\"\"")
         }
         create("staging") {
@@ -88,6 +88,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
