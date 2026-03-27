@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import geekofia.poojapatha.partner.cmp.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -16,6 +17,7 @@ class AppPreferences @Inject constructor(
     companion object {
         private val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
         private val KEY_LANGUAGE = stringPreferencesKey("language")
+        private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
     }
 
     // ── Auth Token ────────────────────────────────────────────────────────────
@@ -36,5 +38,18 @@ class AppPreferences @Inject constructor(
 
     suspend fun setLanguage(languageCode: String) {
         dataStore.edit { it[KEY_LANGUAGE] = languageCode }
+    }
+
+    // ── Theme Mode ────────────────────────────────────────────────────────────
+
+    val themeMode: Flow<ThemeMode> = dataStore.data.map { prefs ->
+        prefs[KEY_THEME_MODE]
+            ?.runCatching { ThemeMode.valueOf(this) }
+            ?.getOrNull()
+            ?: ThemeMode.LIGHT
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        dataStore.edit { it[KEY_THEME_MODE] = mode.name }
     }
 }
